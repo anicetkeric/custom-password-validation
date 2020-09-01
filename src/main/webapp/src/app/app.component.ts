@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Validators, FormBuilder, FormGroup } from '@angular/forms';
 import { IUserData, UserData } from './user-data.model';
 import { HttpClient } from '@angular/common/http';
-
+import { environment } from './../environments/environment';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -40,8 +40,8 @@ export class AppComponent implements OnInit {
     this.submitted = true;
     const user = this.createFromForm();
 
-    this.http.post('http://localhost:8080/api/registration', user, { responseType: 'text' }).subscribe(
-      data => {
+    this.http.post(environment.apiUrl + '/registration', user, { responseType: 'text' }).subscribe(
+      data => { 
         this.errorFieldSubmitted = {};
         this.apiResponse.error = false;
         this.apiResponse.message = 'Successful registration';

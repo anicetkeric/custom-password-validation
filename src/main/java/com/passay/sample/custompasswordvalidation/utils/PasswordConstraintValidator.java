@@ -1,13 +1,15 @@
 package com.passay.sample.custompasswordvalidation.utils;
 
 import com.passay.sample.custompasswordvalidation.annotation.ValidPassword;
+import lombok.SneakyThrows;
 import org.passay.*;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Properties;
 
 
 /**
@@ -22,24 +24,21 @@ public class PasswordConstraintValidator implements ConstraintValidator<ValidPas
 
     }
 
-
-/*   LengthRule(8,30)-impose la longueur du mot de passe entre 8 et 30 caractères.
-
-    CharacterRule(EnglishCharacterData.UpperCase,1)-applique le mot de passe à au moins 1 caractère majuscule.
-
-    CharacterRule(EnglishCharacterData.LowerCase,1)-applique le mot de passe à au moins 1 caractère minuscule.
-
-    CharacterRule(EnglishCharacterData.Digit,1)-applique le mot de passe à au moins 1 caractère numérique.
-
-    CharacterRule(EnglishCharacterData.Special,1)-applique le mot de passe à au moins 1 symbole(caractère spécial).
-
-    WhitespaceRule-applique le mot de passe ne contient pas d'espace.*/
+    @SneakyThrows
     @Override
     public boolean isValid(String password, ConstraintValidatorContext context) {
-        PasswordValidator validator = new PasswordValidator(Arrays.asList(
 
-                // at least 8 characters
-                new LengthRule(8, 30),
+        //customizing validation messages
+        Properties props = new Properties();
+        InputStream inputStream = getClass()
+                .getClassLoader().getResourceAsStream("passay.properties");
+        props.load(inputStream);
+        MessageResolver resolver = new PropertiesMessageResolver(props);
+
+        PasswordValidator validator = new PasswordValidator(resolver, Arrays.asList(
+
+                // length between 8 and 16 characters
+                new LengthRule(8, 16),
 
                 // at least one upper-case character
                 new CharacterRule(EnglishCharacterData.UpperCase, 1),
@@ -54,7 +53,12 @@ public class PasswordConstraintValidator implements ConstraintValidator<ValidPas
                 new CharacterRule(EnglishCharacterData.Special, 1),
 
                 // no whitespace
-                new WhitespaceRule()
+                new WhitespaceRule(),
+
+                // rejects passwords that contain a sequence of >= 5 characters alphabetical  (e.g. abcdef)
+                 new IllegalSequenceRule(EnglishSequenceData.Alphabetical, 5, false),
+                // rejects passwords that contain a sequence of >= 5 characters numerical   (e.g. 12345)
+                new IllegalSequenceRule(EnglishSequenceData.Numerical, 5, false)
         ));
 
         RuleResult result = validator.validate(new PasswordData(password));
@@ -64,7 +68,7 @@ public class PasswordConstraintValidator implements ConstraintValidator<ValidPas
         }
 
         List<String> messages = validator.getMessages(result);
-        String messageTemplate = messages.stream().collect(Collectors.joining(","));
+        String messageTemplate = String.join(",", messages);
         context.buildConstraintViolationWithTemplate(messageTemplate)
                 .addConstraintViolation()
                 .disableDefaultConstraintViolation();

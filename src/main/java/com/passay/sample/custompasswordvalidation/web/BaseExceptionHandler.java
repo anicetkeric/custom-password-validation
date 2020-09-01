@@ -31,6 +31,4 @@ public class BaseExceptionHandler {
         );
         return new ApiResponse(errors, "VALIDATION_FAILED");
     }
-
-
 }
